@@ -6,7 +6,7 @@ import base64
 
 from PyQt6.QtWidgets import (QApplication, QDialog, QVBoxLayout, QFormLayout, 
                              QLineEdit, QDialogButtonBox, QDoubleSpinBox, QSpinBox,
-                             QSystemTrayIcon, QMenu, QStyle, QMessageBox, QComboBox)
+                             QSystemTrayIcon, QMenu, QStyle, QMessageBox, QComboBox, QWidgetAction, QSlider, QWidget, QLabel)
 from PyQt6.QtWebEngineWidgets import QWebEngineView
 from PyQt6.QtCore import Qt, QUrl
 from PyQt6.QtGui import QAction, QIcon # Ensure QIcon is imported
@@ -150,7 +150,7 @@ class SettingsDialog(QDialog):
             'height': self.height_input.value(),
             'opacity': self.opacity_input.value()
         }
-
+        
 def main():
     app = QApplication(sys.argv)
     app.setQuitOnLastWindowClosed(False)
@@ -165,6 +165,12 @@ def main():
 
     settings = dialog.get_data()
     final_url = f"http://{settings['user']}:{settings['pass']}@{settings['ip']}/tally/{settings['input']}"
+    
+    
+    def update_opacity(value):
+        new_opacity = value / 100.0
+        view.setWindowOpacity(new_opacity)
+
 
     tray_icon = QSystemTrayIcon()
     
@@ -206,6 +212,27 @@ def main():
     web_script.setInjectionPoint(QWebEngineScript.InjectionPoint.DocumentReady)
     web_script.setWorldId(QWebEngineScript.ScriptWorldId.MainWorld)
     view.page().scripts().insert(web_script)
+    
+    
+    #Add opacity slider
+    opacity_widget = QWidget()
+    opacity_layout = QVBoxLayout(opacity_widget)
+    opacity_layout.setContentsMargins(10, 10, 10, 10)
+    opacity_label = QLabel("Opacity")
+    opacity_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+    opacity_layout.addWidget(opacity_label)
+    
+    opacity_slider = QSlider(Qt.Orientation.Horizontal)
+    opacity_slider.setRange(0, 100)
+    opacity_slider.setValue(int(settings['opacity'] * 100))
+    
+    opacity_slider.valueChanged.connect(update_opacity)
+    
+    opacity_layout.addWidget(opacity_slider)
+    opacity_action = QWidgetAction(tray_menu)
+    opacity_action.setDefaultWidget(opacity_widget)
+    tray_menu.addAction(opacity_action)
+    
 
     screen_rect = app.primaryScreen().availableGeometry()
     
